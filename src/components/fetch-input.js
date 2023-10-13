@@ -104,19 +104,21 @@ class FetchInput extends Component {
    * Updates the suggested items in the Popover.
    *
    * @param {string} value The <input> value.
+   * @param {number} postId The post ID.
    */
-  updateSuggestions( value ) {
+  updateSuggestions( value, postId = 0 ) {
     this.setState( {
       loading: true,
     } );
 
+    // search for posts by title
     const request = apiFetch( {
       path: addQueryArgs( '/wp/v2/' + this.props.apiSlug, {
         search: value,
         per_page: 5,
       } ),
     } );
-
+    
     request.then( ( results ) => {
       // A fetch Promise doesn't have an abort option. It's mimicked by
       // comparing the request reference in on the instance, which is
@@ -124,6 +126,8 @@ class FetchInput extends Component {
       if ( this.suggestionsRequest !== request ) {
         return;
       }
+
+      console.log('results', results);
 
       // end loading
       this.setState( {
@@ -153,7 +157,41 @@ class FetchInput extends Component {
           } );
         }
       } else {
-        this.props.debouncedSpeak( __( 'No results.', 'genesis-custom-blocks-pro' ), 'assertive' );
+        if ( postId ) {
+          apiFetch( {
+            path: '/wp/v2/' + this.props.apiSlug + '/' + postId,
+          } ).then( ( result ) => {
+            
+            if ( result ) {
+              this.setState( {
+                results: [ result ],
+                showSuggestions: true,
+              } );
+
+              this.props.debouncedSpeak(
+                /* translators: %d: the number of results */
+                sprintf( _n(
+                  '%d result found, use up and down arrow keys to navigate.',
+                  '%d results found, use up and down arrow keys to navigate.',
+                  1,
+                  'genesis-custom-blocks-pro'
+                ), 1 ), 'assertive' );
+            } else {
+              this.setState( {
+                results,
+                showSuggestions: false,
+              } );
+            }
+          } );
+        } else {
+          this.props.debouncedSpeak( __( 'No results.', 'genesis-custom-blocks-pro' ), 'assertive' );
+        
+          if( !value ) {
+            this.setState( {
+              results
+            });
+          }
+        }
       }
     } ).catch( () => {
       if ( this.suggestionsRequest === request ) {
@@ -227,7 +265,7 @@ class FetchInput extends Component {
     * On focusing, updates the suggestions.
     */
   onFocus() {
-    this.updateSuggestions( this.getInputValue() );
+    this.updateSuggestions( this.getInputValue(), this.getPostId() );
   }
 
   /**
@@ -345,6 +383,15 @@ class FetchInput extends Component {
     */
   getInputValue() {
     return this.props.hasOwnProperty( 'displayValue' ) ? this.props.displayValue : this.props.value;
+  }
+
+  /**
+   * Gets the ID of the post.
+   * 
+   * @returns {number} The ID of the post.
+   */
+  getPostId() {
+    return this.props.hasOwnProperty( 'value' ) ? this.props.value : 0;
   }
 
   render() {
