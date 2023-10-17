@@ -253,9 +253,7 @@ class FetchInput extends Component {
         return;
       }
 
-      if ( false === this.inputRef.current.checkValidity() ) {
-        this.handlePopoverButton( '' );
-      } else {
+      if ( false !== this.inputRef.current.checkValidity() ) {
         this.handlePopoverButton( this.state.results[ this.state.selectedSuggestion ] );
       }
     }
