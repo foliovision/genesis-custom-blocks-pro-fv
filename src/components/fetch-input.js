@@ -248,14 +248,6 @@ class FetchInput extends Component {
       this.setState( {
         showSuggestions: false,
       } );
-
-      if ( '' === this.getInputValue() ) {
-        return;
-      }
-
-      if ( false !== this.inputRef.current.checkValidity() ) {
-        this.handlePopoverButton( this.state.results[ this.state.selectedSuggestion ] );
-      }
     }
   }
 
